@@ -1,4 +1,3 @@
-import pytest
 import requests
 from test_user import user
 
