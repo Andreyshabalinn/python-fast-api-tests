@@ -1,37 +1,38 @@
-from fastapi import FastAPI, Request, HTTPException
-from typing import Dict
+from http import HTTPStatus
+import json
+from fastapi import FastAPI, HTTPException
+from fastapi_pagination import Page, paginate
+from fastapi_pagination import add_pagination
+
+from models.test_user import User
+from models.AppStatus import AppStatus
 
 app = FastAPI()
 
 # Мок-данные
-users = [
-    {"id": 1, "first_name": "George"},
-    {"id": 2, "first_name": "Janet"},
-]
+users: list[User] = None
 
-resources = [
-    {"id": 2, "name": "fuchsia rose"},
-]
+with open("test_users.json") as f:
+    users = json.load(f)
 
-@app.get("/api/users")
-def get_users(page: int = 1):
-    return {"data": users}
+@app.get("/api/healthcheck", status_code=HTTPStatus.OK)
+def healthcheck()->AppStatus:
+    return AppStatus(users=bool(users))
+
+@app.get("/api/users", response_model=Page[User])
+def get_users(page: int = 1)-> list[User]:
+    return paginate(users)
 
 @app.get("/api/users/{user_id}")
-def get_user_by_id(user_id: int):
+def get_user_by_id(user_id: int) -> User:
     for user in users:
         if user["id"] == user_id:
-            return {"data": user}
+            return user
     raise HTTPException(status_code=404, detail="User not found")
 
-@app.get("/api/unknown/{resource_id}")
-def get_resource(resource_id: int):
-    for res in resources:
-        if res["id"] == resource_id:
-            return {"data": res}
-    raise HTTPException(status_code=404, detail="Resource not found")
-
 @app.post("/api/users", status_code=201)
-async def create_user(request: Request):
-    user_data: Dict = await request.json()
-    return user_data
+async def create_user(user: User):
+    return user
+
+
+add_pagination(app)
