@@ -12,7 +12,7 @@ app = FastAPI()
 # Мок-данные
 users: list[User] = None
 
-with open("test_users.json") as f:
+with open("models/test_users.json") as f:
     users = json.load(f)
 
 @app.get("/api/healthcheck", status_code=HTTPStatus.OK)
