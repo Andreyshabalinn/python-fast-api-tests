@@ -36,68 +36,68 @@ def created_user(app_url):
     yield response
 
 
-# @pytest.mark.usefixtures("fill_test_data")
-# class TestGetUsers:
+@pytest.mark.usefixtures("fill_test_data")
+class TestGetUsers:
 
-#     @pytest.mark.parametrize(
-#         "page,size,expected_names",
-#     [
-#         (1, 2, ["George", "Mort"]),
-#         (2, 2, ["Sam", "Man"]),
-#         (3, 2, ['Dan', 'Can']),
-#     ]
-#     )
+    @pytest.mark.parametrize(
+        "page,size,expected_names",
+    [
+        (1, 2, ["George", "Mort"]),
+        (2, 2, ["Sam", "Man"]),
+        (3, 2, ['Dan', 'Can']),
+    ]
+    )
 
-#     def test_users_pagination(self, app_url, page, size, expected_names, fill_test_data):
-#         response = requests.get(f"{app_url}users", params={"page": page, "size": size})
-#         assert response.status_code == 200
-#         print(response.json())
-#         items = response.json()["items"]
-#         returned_users = [User(**u) for u in items]
-#         returned_ids = [u.first_name for u in returned_users]
+    def test_users_pagination(self, app_url, page, size, expected_names, fill_test_data):
+        response = requests.get(f"{app_url}users", params={"page": page, "size": size})
+        assert response.status_code == 200
+        print(response.json())
+        items = response.json()["items"]
+        returned_users = [User(**u) for u in items]
+        returned_ids = [u.first_name for u in returned_users]
 
-#         assert returned_ids == expected_names
-
-
-#     def test_get_users_len(self, app_url, fill_test_data):
-#         response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(fill_test_data)})
-#         assert response.status_code == 200
-#         items = response.json()["items"]
-#         returned_users = [User(**user_data) for user_data in items]
-#         assert len(returned_users) == len(fill_test_data)
+        assert returned_ids == expected_names
 
 
-#     def test_get_users(self, app_url, fill_test_data):
-#         response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(fill_test_data)})
-#         assert response.status_code == 200
-#         items = response.json()["items"]
-#         returned_users = [User(**user_data) for user_data in items]
-#         assert returned_users[0].model_dump() == fill_test_data[0]
+    def test_get_users_len(self, app_url, fill_test_data):
+        response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(fill_test_data)})
+        assert response.status_code == 200
+        items = response.json()["items"]
+        returned_users = [User(**user_data) for user_data in items]
+        assert len(returned_users) == len(fill_test_data)
 
 
-#     @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
-#     def test_get_user_by_id(self, app_url, user_id, fill_test_data):
-#         user = fill_test_data[user_id - 1]
-#         response = requests.get(f"{app_url}users/{user['id']}", headers=headers)
-#         assert response.status_code == 200
-#         returned_user = User(**response.json())
-#         assert returned_user.model_dump() == user
-
-#     @pytest.mark.parametrize("user_id", [0, 9999, "amogus"])
-#     def test_get_user_by_invalid_id(self, app_url, user_id):
-#         response = requests.get(f"{app_url}users/{user_id}", headers=headers)
-#         assert response.status_code in [404, 422]
+    def test_get_users(self, app_url, fill_test_data):
+        response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(fill_test_data)})
+        assert response.status_code == 200
+        items = response.json()["items"]
+        returned_users = [User(**user_data) for user_data in items]
+        assert returned_users[0].model_dump() == fill_test_data[0]
 
 
-# def test_create_user(app_url, get_data_for_creating_or_updating_user):
-#     excepted_user = get_data_for_creating_or_updating_user.model_dump(mode="json")
-#     response = requests.post(f"{app_url}users", headers=headers, json=excepted_user)
-#     assert response.status_code == 201
-#     returned_user = response.json()
-#     requests.delete(f"{app_url}users/{returned_user['id']}")
-#     returned_user.pop("id", None)
-#     excepted_user.pop("id", None)
-#     assert returned_user == excepted_user
+    @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
+    def test_get_user_by_id(self, app_url, user_id, fill_test_data):
+        user = fill_test_data[user_id - 1]
+        response = requests.get(f"{app_url}users/{user['id']}", headers=headers)
+        assert response.status_code == 200
+        returned_user = User(**response.json())
+        assert returned_user.model_dump() == user
+
+    @pytest.mark.parametrize("user_id", [0, 9999, "amogus"])
+    def test_get_user_by_invalid_id(self, app_url, user_id):
+        response = requests.get(f"{app_url}users/{user_id}", headers=headers)
+        assert response.status_code in [404, 422]
+
+
+def test_create_user(app_url, get_data_for_creating_or_updating_user):
+    excepted_user = get_data_for_creating_or_updating_user.model_dump(mode="json")
+    response = requests.post(f"{app_url}users", headers=headers, json=excepted_user)
+    assert response.status_code == 201
+    returned_user = response.json()
+    requests.delete(f"{app_url}users/{returned_user['id']}")
+    returned_user.pop("id", None)
+    excepted_user.pop("id", None)
+    assert returned_user == excepted_user
 
 def test_update_user_by_id(app_url, get_data_for_creating_or_updating_user, created_user):
     updated_user = get_data_for_creating_or_updating_user.model_dump(mode="json")
