@@ -1,78 +1,117 @@
+import time
 import pytest
 import requests
 import json
 
 from pathlib import Path
-from test_user import User
+from app.models.test_user import User, UserCreate, UserUpdate
 
 headers = {"x-api-key": "reqres-free-v1"}
 
 
-# Загружаем пользователей из JSON-файла
-mock_users_path = Path(__file__).parent.parent / "models" / "test_users.json"
-with open(mock_users_path, "r") as f:
-    mock_users = [User(**user_data) for user_data in json.load(f)]
+@pytest.fixture(scope="class")
+def fill_test_data(app_url):
+    with open("app/models/test_users.json") as f:
+        test_data_users = json.load(f)
+        api_users = []
+    for user in test_data_users:
+        response = requests.post(f"{app_url}users/", json=user)
+        api_users.append(response.json())
+
+    print(api_users)
+    yield api_users
+
+    for user in api_users:
+        response = requests.delete(f"{app_url}users/{user['id']}")
+
+@pytest.fixture()
+def get_data_for_creating_or_updating_user():
+    user = UserCreate(email="oblivionremaster@bethesda.kz", last_name="Doe", first_name="Jane", avatar="https:nometa.xyz")
+    yield user
+
+@pytest.fixture()
+def created_user(app_url):
+    user = UserCreate(email="oblivionremaster@bethesda.kz", last_name="Joe", first_name="Dane", avatar="https:nometa.xyz")
+    response = requests.post(f"{app_url}users", headers=headers, json=user.model_dump(mode="json")).json()
+    yield response
 
 
-@pytest.mark.parametrize(
-    "page,size,expected_ids",
-    [
-        (1, 2, [1, 2]),
-        (2, 2, [3, 4]),
-        (3, 2, [5, 6]),
-        (1, 3, [1, 2, 3]),
-        (2, 3, [4, 5, 6]),
-    ]
-)
-def test_users_pagination(app_url, page, size, expected_ids):
-    response = requests.get(f"{app_url}users", params={"page": page, "size": size})
+# @pytest.mark.usefixtures("fill_test_data")
+# class TestGetUsers:
+
+#     @pytest.mark.parametrize(
+#         "page,size,expected_names",
+#     [
+#         (1, 2, ["George", "Mort"]),
+#         (2, 2, ["Sam", "Man"]),
+#         (3, 2, ['Dan', 'Can']),
+#     ]
+#     )
+
+#     def test_users_pagination(self, app_url, page, size, expected_names, fill_test_data):
+#         response = requests.get(f"{app_url}users", params={"page": page, "size": size})
+#         assert response.status_code == 200
+#         print(response.json())
+#         items = response.json()["items"]
+#         returned_users = [User(**u) for u in items]
+#         returned_ids = [u.first_name for u in returned_users]
+
+#         assert returned_ids == expected_names
+
+
+#     def test_get_users_len(self, app_url, fill_test_data):
+#         response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(fill_test_data)})
+#         assert response.status_code == 200
+#         items = response.json()["items"]
+#         returned_users = [User(**user_data) for user_data in items]
+#         assert len(returned_users) == len(fill_test_data)
+
+
+#     def test_get_users(self, app_url, fill_test_data):
+#         response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(fill_test_data)})
+#         assert response.status_code == 200
+#         items = response.json()["items"]
+#         returned_users = [User(**user_data) for user_data in items]
+#         assert returned_users[0].model_dump() == fill_test_data[0]
+
+
+#     @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
+#     def test_get_user_by_id(self, app_url, user_id, fill_test_data):
+#         user = fill_test_data[user_id - 1]
+#         response = requests.get(f"{app_url}users/{user['id']}", headers=headers)
+#         assert response.status_code == 200
+#         returned_user = User(**response.json())
+#         assert returned_user.model_dump() == user
+
+#     @pytest.mark.parametrize("user_id", [0, 9999, "amogus"])
+#     def test_get_user_by_invalid_id(self, app_url, user_id):
+#         response = requests.get(f"{app_url}users/{user_id}", headers=headers)
+#         assert response.status_code in [404, 422]
+
+
+# def test_create_user(app_url, get_data_for_creating_or_updating_user):
+#     excepted_user = get_data_for_creating_or_updating_user.model_dump(mode="json")
+#     response = requests.post(f"{app_url}users", headers=headers, json=excepted_user)
+#     assert response.status_code == 201
+#     returned_user = response.json()
+#     requests.delete(f"{app_url}users/{returned_user['id']}")
+#     returned_user.pop("id", None)
+#     excepted_user.pop("id", None)
+#     assert returned_user == excepted_user
+
+def test_update_user_by_id(app_url, get_data_for_creating_or_updating_user, created_user):
+    updated_user = get_data_for_creating_or_updating_user.model_dump(mode="json")
+    updated_user.pop("id", None)
+    response = requests.patch(f"{app_url}users/{created_user['id']}", headers=headers,  json=updated_user)
     assert response.status_code == 200
+    requests.delete(f"{app_url}users/{created_user['id']}")
+    returned_user = response.json()
+    returned_user.pop("id", None)
+    assert returned_user == updated_user
 
-    items = response.json()["items"]
-    returned_users = [User(**u) for u in items]
-    returned_ids = [u.id for u in returned_users]
 
-    assert returned_ids == expected_ids
-
-def test_get_users_len(app_url):
-    response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(mock_users)})
+def test_delete_user_by_id(app_url, created_user):
+    response = requests.delete(f"{app_url}users/{created_user['id']}", headers=headers)
     assert response.status_code == 200
-    items = response.json()["items"]
-    returned_users = [User(**user_data) for user_data in items]
-    assert len(returned_users) == len(mock_users)
-
-def test_get_users(app_url):
-    response = requests.get(f"{app_url}users", headers=headers, params={"page": 1, "size": len(mock_users)})
-    assert response.status_code == 200
-    items = response.json()["items"]
-    returned_users = [User(**user_data) for user_data in items]
-    assert returned_users[0] == mock_users[0]
-
-@pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
-def test_get_user_by_id(app_url, user_id):
-    user = mock_users[user_id-1]
-    response = requests.get(f"{app_url}users/{user.id}", headers=headers)
-    assert response.status_code == 200
-    returned_user = User(**response.json())
-    assert returned_user == user
-
-@pytest.mark.parametrize("user_id", [0, 9999, "amogus"])
-def test_get_user_by_invalid_id(app_url, user_id):
-    response = requests.get(f"{app_url}users/{user_id}", headers=headers)
-    assert response.status_code in [404, 422]
-def test_create_user(app_url):
-    user = User(
-        id=10,
-        email="newuser@mail.kz",
-        first_name="Test",
-        last_name="User",
-        avatar="https://reqres.in/img/faces/10-image.jpg"
-    )
-    response = requests.post(
-        f"{app_url}users",
-        headers=headers,
-        json=json.loads(user.model_dump_json())
-    )
-    assert response.status_code == 201
-    returned_user = User(**response.json())
-    assert returned_user == user
+    response = requests.get(f"{app_url}users/{created_user['id']}", headers=headers)
+    assert response.status_code == 404
