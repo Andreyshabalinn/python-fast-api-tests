@@ -1,3 +1,4 @@
+import math
 import time
 import pytest
 import requests
@@ -39,24 +40,61 @@ def created_user(app_url):
 @pytest.mark.usefixtures("fill_test_data")
 class TestGetUsers:
 
-    @pytest.mark.parametrize(
-        "page,size,expected_names",
-    [
-        (1, 2, ["George", "Mort"]),
-        (2, 2, ["Sam", "Man"]),
-        (3, 2, ['Dan', 'Can']),
-    ]
-    )
-
-    def test_users_pagination(self, app_url, page, size, expected_names, fill_test_data):
-        response = requests.get(f"{app_url}users", params={"page": page, "size": size})
+    @pytest.mark.parametrize("size,page", [(1, 1), (2, 2), (3, 3)])
+    def test_pagination_total_count(self, app_url, fill_test_data, size, page):
+        response = requests.get(f"{app_url}users/?page={page}&size={size}")
         assert response.status_code == 200
-        print(response.json())
-        items = response.json()["items"]
-        returned_users = [User(**u) for u in items]
-        returned_ids = [u.first_name for u in returned_users]
 
-        assert returned_ids == expected_names
+        data = response.json()
+
+        total_users = len(fill_test_data)
+        total_pages = math.ceil(total_users / size)
+        start = (page - 1) * size
+        end = min(page * size, total_users)
+        expected_items = end - start
+
+        assert isinstance(data["items"], list)
+        assert data["total"] == total_users
+        assert data["page"] == page
+        assert data["size"] == size
+        assert data["pages"] == total_pages
+        assert len(data["items"]) == expected_items
+
+
+    @pytest.mark.parametrize("size", [5, 8, 3])
+    def test_pagination_pages_count_all_pages(self, app_url, fill_test_data, size):
+        total_users = len(fill_test_data)
+        expected_pages = math.ceil(total_users / size)
+
+        for page in range(1, expected_pages + 1):
+            response = requests.get(f"{app_url}users/?page={page}&size={size}")
+            assert response.status_code == 200
+
+            data = response.json()
+            assert data["pages"] == expected_pages
+
+
+    def test_pagination_page_switch(self, app_url):
+        size = 5
+        page1 = 1
+        page2 = 2
+
+        response1 = requests.get(f"{app_url}users/?page={page1}&size={size}")
+        response2 = requests.get(f"{app_url}users/?page={page2}&size={size}")
+
+        assert response1.status_code == 200
+        assert response2.status_code == 200
+
+        items1 = response1.json()["items"]
+        items2 = response2.json()["items"]
+
+        assert items1 != items2
+
+
+        ids1 = {item["id"] for item in items1}
+        ids2 = {item["id"] for item in items2}
+        intersection = ids1 & ids2
+        assert len(intersection) == 0, f"Обнаружены пересекающиеся ID: {intersection}"
 
 
     def test_get_users_len(self, app_url, fill_test_data):
