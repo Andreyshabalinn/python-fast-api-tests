@@ -1,5 +1,5 @@
 import requests
-from models.AppStatus import AppStatus
+from app.models.AppStatus import AppStatus
 
 
 def test_healthcheck_available(app_url):
@@ -18,5 +18,5 @@ def test_healthcheck_users_true(app_url):
     assert response.status_code == 200
     status = AppStatus(**response.json())
     assert isinstance(status, AppStatus)
-    assert status.users is True
+    assert status.database is True
 
