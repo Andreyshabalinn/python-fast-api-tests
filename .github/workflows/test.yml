@@ -21,7 +21,7 @@ jobs:
       - run: docker compose build
       - run: docker compose up -d
       - run: sleep 5
-      - run PYTHONPATH=. pytest
+      - run: PYTHONPATH=. pytest
       - run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
       - run: pytest -s -v --junitxml=test-results.xml
         env:
