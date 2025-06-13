@@ -112,7 +112,6 @@ class TestGetUsers:
         returned_users = [User(**user_data) for user_data in items]
         assert returned_users[0].model_dump() == fill_test_data[0]
 
-
     @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
     def test_get_user_by_id(self, app_url, user_id, fill_test_data):
         user = fill_test_data[user_id - 1]

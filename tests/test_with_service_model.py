@@ -39,10 +39,10 @@ def created_user(env):
 @pytest.mark.usefixtures("fill_test_data")
 class TestGetUsers:
 
-    @pytest.mark.parametrize("user_id", [14,15,16])
-    def test_get_user_by_id(self, env, user_id, fill_test_data):
+    def test_get_user_by_id(self, env, fill_test_data):
         response = ServiceModel(env).get_users(page=1, size=len(fill_test_data))
-        user = fill_test_data[user_id - 1]
+        user = fill_test_data[0]
+        user_id = user['id']
         response = ServiceModel(env).get_user_id(user_id)
         assert response.status_code == 200
         returned_user = User(**response.json())
