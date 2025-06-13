@@ -39,14 +39,24 @@ def created_user(env):
 @pytest.mark.usefixtures("fill_test_data")
 class TestGetUsers:
 
-    @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
-    def test_get_user_by_id(self, env, user_id, fill_test_data):
+    @pytest.mark.parametrize("index", range(6))
+    def test_get_user_by_index(env, index, fill_test_data):
+        expected_user = fill_test_data[index]
+
+        # Получить всех пользователей
         response = ServiceModel(env).get_users(page=1, size=len(fill_test_data))
-        user = fill_test_data[user_id - 1]
+        users = response.json()
+
+        # Найти нужного по email или другим уникальным полям
+        found = next(u for u in users if u["email"] == expected_user["email"])
+        user_id = found["id"]
+
+        # Проверка по ID
         response = ServiceModel(env).get_user_id(user_id)
         assert response.status_code == 200
+
         returned_user = User(**response.json())
-        assert returned_user.model_dump() == user
+        assert returned_user.model_dump() == expected_user
     
     @pytest.mark.parametrize("size,page", [(1, 1), (2, 2), (3, 3)])
     def test_pagination_total_count(self, env, fill_test_data, size, page):
