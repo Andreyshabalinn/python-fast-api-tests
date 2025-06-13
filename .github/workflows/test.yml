@@ -25,7 +25,7 @@ jobs:
       - run: sleep 5
       - run: PYTHONPATH=.
       - run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
-      - run: pytest -s -v --junitxml=test-results.xml
+      - run: pytest -s -v --junitxml=test-results.xml --env=rc
 
       - run: docker compose logs web
         if: always()
