@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       POSTGRES_USER: ci
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_PASSWORD: example
       BASE_URL: http://localhost:8000/api/
 
     steps:
