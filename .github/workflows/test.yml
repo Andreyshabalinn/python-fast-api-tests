@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       POSTGRES_USER: ci
-      POSTGRES_PASSWORD: example
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       BASE_URL: http://localhost:8000/api/
 
     steps:
@@ -19,6 +19,9 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
+      - name: Set DATABASE_ENGINE env
+        run: |
+          echo "DATABASE_ENGINE=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/postgres" >> $GITHUB_ENV
       - run: pip install --upgrade -r requirements.txt
       - run: docker compose build
       - run: docker compose up -d
