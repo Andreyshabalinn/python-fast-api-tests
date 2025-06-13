@@ -39,6 +39,15 @@ def created_user(env):
 @pytest.mark.usefixtures("fill_test_data")
 class TestGetUsers:
 
+    @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
+    def test_get_user_by_id(self, env, user_id, fill_test_data):
+        response = ServiceModel(env).get_users(page=1, size=len(fill_test_data))
+        user = fill_test_data[user_id - 1]
+        response = ServiceModel(env).get_user_id(user_id)
+        assert response.status_code == 200
+        returned_user = User(**response.json())
+        assert returned_user.model_dump() == user
+    
     @pytest.mark.parametrize("size,page", [(1, 1), (2, 2), (3, 3)])
     def test_pagination_total_count(self, env, fill_test_data, size, page):
         response = ServiceModel(env).get_users(page, size)
@@ -92,15 +101,6 @@ class TestGetUsers:
         ids2 = {item["id"] for item in items2}
         intersection = ids1 & ids2
         assert len(intersection) == 0, f"Обнаружены пересекающиеся ID: {intersection}"
-
-    @pytest.mark.parametrize("user_id", [1,2,3,4,5,6])
-    def test_get_user_by_id(self, env, user_id, fill_test_data):
-        response = ServiceModel(env).get_users(page=1, size=len(fill_test_data))
-        user = fill_test_data[user_id - 1]
-        response = ServiceModel(env).get_user_id(user_id)
-        assert response.status_code == 200
-        returned_user = User(**response.json())
-        assert returned_user.model_dump() == user
 
     def test_get_users_len(self, env, fill_test_data):
         response = ServiceModel(env).get_users(page=1, size=len(fill_test_data))
