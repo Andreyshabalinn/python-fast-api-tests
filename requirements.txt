@@ -9,3 +9,4 @@ fastapi-pagination==0.13.1
 psycopg2-binary
 sqlalchemy
 sqlmodel
+curlify
