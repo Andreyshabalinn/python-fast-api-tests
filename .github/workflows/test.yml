@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "DATABASE_ENGINE=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/postgres" >> $GITHUB_ENV
       - run: pip install --upgrade -r requirements.txt
-      - run: docker compose build
+      - run: docker compose up --build --force-recreate --remove-orphans -d
       - run: docker compose up -d
       - run: sleep 5
       - run: PYTHONPATH=.
